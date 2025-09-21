@@ -1,16 +1,17 @@
 import { Message } from '../entities/message.entity';
 import { MessageRepository } from '../ports/message.repository.port';
 import { HourlyCountRepository } from '../ports/hourly-count.repository.port';
-import {
-  ExternalNotificationService,
-  DailyTotal,
-} from '../ports/external-notification.port';
+import { ExternalNotificationService } from '../ports/external-notification.port';
+import { DailyTotalCalculator } from './daily-total-calculator.service';
+import { HourBucket } from '../value-objects/hour-bucket.vo';
+import { DayBucket } from '../value-objects/day-bucket.vo';
 
 export class MessageProcessingService {
   constructor(
     private readonly messageRepository: MessageRepository,
     private readonly hourlyCountRepository: HourlyCountRepository,
     private readonly notificationService: ExternalNotificationService,
+    private readonly dailyTotalCalculator: DailyTotalCalculator,
   ) {}
 
   async processMessage(message: Message): Promise<void> {
@@ -24,30 +25,18 @@ export class MessageProcessingService {
     await this.messageRepository.save(message);
 
     // Increment hourly count (UTC, truncated to hour) using VOs
-    const hourBucket = message.getHourBucket();
+    const hourBucket = HourBucket.fromDate(message.getCreatedAt());
     await this.hourlyCountRepository.incrementCount(
       message.getAccountId(),
       hourBucket,
     );
 
     // Calculate daily total and notify externally
-    const dayBucket = message.getDayBucket();
-    const from = dayBucket.toDate(); // 00:00:00Z of the UTC day
-    const to = new Date(from.getTime() + 24 * 60 * 60 * 1000); // next day
-
-    const series = await this.hourlyCountRepository.findByRange(
+    const dayBucket = DayBucket.fromDate(message.getCreatedAt());
+    const dailyTotal = await this.dailyTotalCalculator.calculateForDay(
       message.getAccountId(),
-      from,
-      to,
+      dayBucket,
     );
-    const total = series.reduce((sum, it) => sum + it.count, 0);
-
-    const dailyTotal: DailyTotal = {
-      accountId: message.getAccountId(),
-      day: dayBucket,
-      totalMessages: total,
-      lastUpdate: new Date(),
-    };
 
     await this.notificationService.sendDailyTotal(dailyTotal);
   }
