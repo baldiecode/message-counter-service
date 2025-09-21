@@ -1,5 +1,7 @@
 import { MessageId } from '../value-objects/message-id.vo';
 import { AccountId } from '../value-objects/account-id.vo';
+import { HourBucket } from '../value-objects/hour-bucket.vo';
+import { DayBucket } from '../value-objects/day-bucket.vo';
 
 export class Message {
   constructor(
@@ -17,13 +19,19 @@ export class Message {
     return this.accountId;
   }
 
-  getHourBucket(): string {
-    const date = new Date(this.createdAt);
-    date.setMinutes(0, 0, 0);
-    return date.toDateString();
+  getCreatedAt(): Date {
+    return this.createdAt;
   }
 
-  getDayKey(): string {
-    return this.createdAt.toISOString().split('T')[0];
+  getMetadata(): Record<string, any> {
+    return this.metadata;
+  }
+
+  getHourBucket(): HourBucket {
+    return HourBucket.fromDate(this.createdAt);
+  }
+
+  getDayBucket(): DayBucket {
+    return DayBucket.fromDate(this.createdAt);
   }
 }
