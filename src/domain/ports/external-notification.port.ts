@@ -24,3 +24,8 @@ export interface DailyTotal {
 export interface ExternalNotificationService {
   sendDailyTotal(dailyTotal: DailyTotal): Promise<void>;
 }
+
+// NestJS injection token for the ExternalNotificationService port
+export const EXTERNAL_NOTIFICATION_SERVICE = Symbol(
+  'ExternalNotificationService',
+);

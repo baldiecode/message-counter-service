@@ -1,10 +1,17 @@
-import { HourlyCountRepository } from '../ports/hourly-count.repository.port';
+import {
+  HourlyCountRepository,
+  HOURLY_COUNT_REPOSITORY,
+} from '../ports/hourly-count.repository.port';
 import { DailyTotal } from '../ports/external-notification.port';
 import { AccountId } from '../value-objects/account-id.vo';
 import { DayBucket } from '../value-objects/day-bucket.vo';
+import { Inject } from '@nestjs/common';
 
 export class DailyTotalCalculator {
-  constructor(private readonly hourlyCountRepository: HourlyCountRepository) {}
+  constructor(
+    @Inject(HOURLY_COUNT_REPOSITORY)
+    private readonly hourlyCountRepository: HourlyCountRepository,
+  ) {}
 
   async calculateForDay(
     accountId: AccountId,
