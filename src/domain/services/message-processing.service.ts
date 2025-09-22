@@ -1,16 +1,10 @@
 import { Message } from '../entities/message.entity';
-import {
-  MessageRepository,
-  MESSAGE_REPOSITORY,
-} from '../ports/message.repository.port';
-import {
-  HourlyCountRepository,
-  HOURLY_COUNT_REPOSITORY,
-} from '../ports/hourly-count.repository.port';
-import {
-  ExternalNotificationService,
-  EXTERNAL_NOTIFICATION_SERVICE,
-} from '../ports/external-notification.port';
+import type { MessageRepository } from '../ports/message.repository.port';
+import { MESSAGE_REPOSITORY } from '../ports/message.repository.port';
+import type { HourlyCountRepository } from '../ports/hourly-count.repository.port';
+import { HOURLY_COUNT_REPOSITORY } from '../ports/hourly-count.repository.port';
+import type { ExternalNotificationService } from '../ports/external-notification.port';
+import { EXTERNAL_NOTIFICATION_SERVICE } from '../ports/external-notification.port';
 import { DailyTotalCalculator } from './daily-total-calculator.service';
 import { HourBucket } from '../value-objects/hour-bucket.vo';
 import { DayBucket } from '../value-objects/day-bucket.vo';
