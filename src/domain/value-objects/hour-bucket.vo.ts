@@ -33,14 +33,10 @@ export class HourBucket {
         'Invalid HourBucket format. Expected YYYY-MM-DDTHH:00:00Z (UTC)',
       );
     }
-    // Validate date components produce a valid date
-    const asDate = this.toDate();
-    // Rebuild canonical string and ensure it matches exactly, catching invalid dates like 2025-13-40
-    const roundTrip = HourBucket.fromDate(asDate).getValue();
-    if (roundTrip !== value) {
-      throw new Error(
-        'Invalid HourBucket value (out-of-range or non-existent date/hour)',
-      );
+    // Basic range validation via Date parse (no recursive construction)
+    const parsed = new Date(value);
+    if (isNaN(parsed.getTime())) {
+      throw new Error('Invalid HourBucket value (non-existent date/hour)');
     }
   }
 

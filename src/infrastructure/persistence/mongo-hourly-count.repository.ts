@@ -1,6 +1,6 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, FilterQuery } from 'mongoose';
+import { Model } from 'mongoose';
 import {
   HourlyCountRepository,
   HourlyCount,
@@ -17,8 +17,6 @@ type HourlyCountDoc = {
 
 @Injectable()
 export class MongoHourlyCountRepository implements HourlyCountRepository {
-  private readonly logger = new Logger(MongoHourlyCountRepository.name);
-
   constructor(
     @InjectModel('HourlyCount') private readonly model: Model<HourlyCountDoc>,
   ) {}
@@ -27,56 +25,47 @@ export class MongoHourlyCountRepository implements HourlyCountRepository {
     accountId: AccountId,
     hourBucket: HourBucket,
   ): Promise<void> {
-    try {
-      await this.model.findOneAndUpdate(
-        { accountId: accountId.toString(), hour: hourBucket.toString() },
-        { $inc: { count: 1 }, $set: { lastUpdated: new Date() } },
-        { upsert: true, new: true, setDefaultsOnInsert: true },
-      );
-      this.logger.log(
-        `Incremented count for account ${accountId.toString()} at ${hourBucket.toString()}`,
-      );
-    } catch (error) {
-      this.logger.error(
-        `Error incrementing count for account ${accountId.toString()} at ${hourBucket.toString()}: ${error.message}`,
-      );
-      throw error;
-    }
+    await this.model.updateOne(
+      { accountId: accountId.getValue(), hour: hourBucket.getValue() },
+      { $inc: { count: 1 }, $set: { lastUpdated: new Date() } },
+      { upsert: true },
+    );
   }
 
+  async findByRange(
+    accountId: AccountId,
+    from: Date,
+    to: Date,
+  ): Promise<HourlyCount[]>;
+  async findByRange(
+    accountId: AccountId,
+    from: HourBucket,
+    to: HourBucket,
+  ): Promise<HourlyCount[]>;
   async findByRange(
     accountId: AccountId,
     from: Date | HourBucket,
     to: Date | HourBucket,
   ): Promise<HourlyCount[]> {
-    try {
-      const fromBucket =
-        from instanceof HourBucket ? from : HourBucket.fromDate(from);
-      const toBucket = to instanceof HourBucket ? to : HourBucket.fromDate(to);
+    const fromValue =
+      from instanceof Date
+        ? HourBucket.fromDate(from).getValue()
+        : from.getValue();
+    const toValue =
+      to instanceof Date ? HourBucket.fromDate(to).getValue() : to.getValue();
 
-      if (fromBucket.getValue() >= toBucket.getValue()) {
-        throw new BadRequestException('from must be before to');
-      }
+    const docs = await this.model
+      .find({
+        accountId: accountId.getValue(),
+        hour: { $gte: fromValue, $lt: toValue },
+      })
+      .sort({ hour: 1 })
+      .lean();
 
-      const query: FilterQuery<HourlyCountDoc> = {
-        accountId: accountId.toString(),
-        hour: { $gte: fromBucket.getValue(), $lt: toBucket.getValue() },
-      };
-
-      const docs = await this.model.find(query).sort({ hour: 1 }).lean();
-      this.logger.log(
-        `Found ${docs.length} hourly counts for account ${accountId.toString()} in range ${fromBucket.getValue()} to ${toBucket.getValue()}`,
-      );
-      return docs.map((d) => ({
-        accountId,
-        hourBucket: HourBucket.fromString(d.hour),
-        count: d.count,
-      }));
-    } catch (error) {
-      this.logger.error(
-        `Error finding hourly counts for account ${accountId.toString()}: ${error.message}`,
-      );
-      throw error;
-    }
+    return docs.map((doc) => ({
+      accountId,
+      hourBucket: HourBucket.fromString(doc.hour),
+      count: doc.count,
+    }));
   }
 }

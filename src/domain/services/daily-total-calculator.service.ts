@@ -1,8 +1,6 @@
-import {
-  HourlyCountRepository,
-  HOURLY_COUNT_REPOSITORY,
-} from '../ports/hourly-count.repository.port';
-import { DailyTotal } from '../ports/external-notification.port';
+import type { HourlyCountRepository } from '../ports/hourly-count.repository.port';
+import { HOURLY_COUNT_REPOSITORY } from '../ports/hourly-count.repository.port';
+import type { DailyTotal } from '../ports/external-notification.port';
 import { AccountId } from '../value-objects/account-id.vo';
 import { DayBucket } from '../value-objects/day-bucket.vo';
 import { Inject } from '@nestjs/common';

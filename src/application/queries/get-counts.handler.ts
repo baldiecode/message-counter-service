@@ -1,7 +1,8 @@
-import { Logger, BadRequestException } from '@nestjs/common';
+import { Logger, BadRequestException, Inject } from '@nestjs/common';
 import { QueryHandler, IQueryHandler } from '@nestjs/cqrs';
 import { GetCountsQuery } from './get-counts.query';
-import { HourlyCountRepository } from '../../domain/ports/hourly-count.repository';
+import type { HourlyCountRepository } from '../../domain/ports/hourly-count.repository.port';
+import { HOURLY_COUNT_REPOSITORY } from '../../domain/ports/hourly-count.repository.port';
 import { AccountId } from '../../domain/value-objects/account-id.vo';
 
 export interface CountResult {
@@ -16,7 +17,10 @@ export class GetCountsHandler
 {
   private readonly logger = new Logger(GetCountsHandler.name);
 
-  constructor(private readonly hourlyCountRepository: HourlyCountRepository) {}
+  constructor(
+    @Inject(HOURLY_COUNT_REPOSITORY)
+    private readonly hourlyCountRepository: HourlyCountRepository,
+  ) {}
 
   async execute(query: GetCountsQuery): Promise<CountResult[]> {
     this.logger.log(
