@@ -18,7 +18,7 @@ export class HttpExternalNotificationAdapter
     const url =
       process.env.DAILY_TOTAL_ENDPOINT ||
       'http://localhost:3000/mock/daily-total';
-    
+
     const payload = {
       account_id: d.accountId.toString(),
       date: d.day.getValue(),
@@ -27,10 +27,8 @@ export class HttpExternalNotificationAdapter
     };
 
     try {
-      const response = await firstValueFrom(
-        this.http.post(url, payload)
-      );
-      
+      const response = await firstValueFrom(this.http.post(url, payload));
+
       this.logger.log(
         `Successfully sent daily total for account ${d.accountId.toString()} on ${d.day.getValue()}`,
       );
