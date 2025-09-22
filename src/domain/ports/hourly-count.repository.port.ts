@@ -54,3 +54,6 @@ export interface HourlyCountRepository {
     to: HourBucket,
   ): Promise<HourlyCount[]>;
 }
+
+// NestJS injection token for the HourlyCountRepository port
+export const HOURLY_COUNT_REPOSITORY = Symbol('HourlyCountRepository');

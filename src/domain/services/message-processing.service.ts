@@ -1,15 +1,28 @@
 import { Message } from '../entities/message.entity';
-import { MessageRepository } from '../ports/message.repository.port';
-import { HourlyCountRepository } from '../ports/hourly-count.repository.port';
-import { ExternalNotificationService } from '../ports/external-notification.port';
+import {
+  MessageRepository,
+  MESSAGE_REPOSITORY,
+} from '../ports/message.repository.port';
+import {
+  HourlyCountRepository,
+  HOURLY_COUNT_REPOSITORY,
+} from '../ports/hourly-count.repository.port';
+import {
+  ExternalNotificationService,
+  EXTERNAL_NOTIFICATION_SERVICE,
+} from '../ports/external-notification.port';
 import { DailyTotalCalculator } from './daily-total-calculator.service';
 import { HourBucket } from '../value-objects/hour-bucket.vo';
 import { DayBucket } from '../value-objects/day-bucket.vo';
+import { Inject } from '@nestjs/common';
 
 export class MessageProcessingService {
   constructor(
+    @Inject(MESSAGE_REPOSITORY)
     private readonly messageRepository: MessageRepository,
+    @Inject(HOURLY_COUNT_REPOSITORY)
     private readonly hourlyCountRepository: HourlyCountRepository,
+    @Inject(EXTERNAL_NOTIFICATION_SERVICE)
     private readonly notificationService: ExternalNotificationService,
     private readonly dailyTotalCalculator: DailyTotalCalculator,
   ) {}
