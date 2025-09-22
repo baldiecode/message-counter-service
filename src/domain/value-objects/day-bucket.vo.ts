@@ -40,15 +40,10 @@ export class DayBucket {
     if (!re.test(value)) {
       throw new Error('Invalid DayBucket format. Expected YYYY-MM-DD');
     }
-
-    // Validate that the date components correspond to a real calendar day
-    // by round-tripping via Date at 00:00:00Z.
-    const asDate = this.toDate();
-    const roundTrip = DayBucket.fromDate(asDate).getValue();
-    if (roundTrip !== value) {
-      throw new Error(
-        'Invalid DayBucket value (out-of-range or non-existent date)',
-      );
+    // Basic validation by parsing
+    const parsed = new Date(`${value}T00:00:00Z`);
+    if (isNaN(parsed.getTime())) {
+      throw new Error('Invalid DayBucket value (non-existent date)');
     }
   }
 
