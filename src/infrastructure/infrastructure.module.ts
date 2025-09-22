@@ -9,6 +9,8 @@ import { HourlyCountSchema } from './persistence/schemas/hourly-count.schema';
 import { MESSAGE_REPOSITORY } from '../domain/ports/message.repository.port';
 import { HOURLY_COUNT_REPOSITORY } from '../domain/ports/hourly-count.repository.port';
 import { EXTERNAL_NOTIFICATION_SERVICE } from '../domain/ports/external-notification.port';
+import { WebhookController } from './http/webhook.controller';
+import { CountsController } from './http/counts.controller';
 
 @Global()
 @Module({
@@ -22,6 +24,7 @@ import { EXTERNAL_NOTIFICATION_SERVICE } from '../domain/ports/external-notifica
       { name: 'HourlyCount', schema: HourlyCountSchema },
     ]),
   ],
+  controllers: [WebhookController, CountsController],
   providers: [
     { provide: MESSAGE_REPOSITORY, useClass: MongoMessageRepository },
     { provide: HOURLY_COUNT_REPOSITORY, useClass: MongoHourlyCountRepository },
