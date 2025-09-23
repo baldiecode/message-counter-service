@@ -1,98 +1,155 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Message Counter Service
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Servicio HTTP construido con NestJS para:
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+- Recibir webhooks de mensajes y contarlos por hora.
+- Consultar conteos por rango (hasta 30 días).
+- Documentación OpenAPI/Swagger en /docs.
 
-## Description
+Archivos clave:
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- Código app: [src/main.ts](src/main.ts), [src/infrastructure/infrastructure.module.ts](src/infrastructure/infrastructure.module.ts), [src/infrastructure/http/webhook.controller.ts](src/infrastructure/http/webhook.controller.ts), [src/infrastructure/http/counts.controller.ts](src/infrastructure/http/counts.controller.ts)
+- DTOs: [src/infrastructure/http/dtos/webhook-message.dto.ts](src/infrastructure/http/dtos/webhook-message.dto.ts), [src/infrastructure/http/dtos/get-counts.query.dto.ts](src/infrastructure/http/dtos/get-counts.query.dto.ts)
+- Requests de ejemplo: [src/requests/message-counter.http](src/requests/message-counter.http)
+- Swagger habilitado en: [src.main.ts](src/main.ts)
 
-## Project setup
+Infraestructura y CI/CD:
 
-```bash
-$ pnpm install
-```
+- Docker: [Dockerfile](Dockerfile), [.dockerignore](.dockerignore)
+- Railway config: [railway.json](railway.json)
+- GitHub Actions CI/CD: [.github/workflows/deploy.yml](.github/workflows/deploy.yml)
 
-## Compile and run the project
+Requisitos
 
-```bash
-# development
-$ pnpm run start
+- Node.js 22+
+- pnpm 8+ (corepack recomendado)
+- MongoDB Atlas (URI mongodb+srv) o MongoDB local
+- GitHub (para CI/CD) y cuenta en Railway
 
-# watch mode
-$ pnpm run start:dev
+Variables de entorno
 
-# production mode
-$ pnpm run start:prod
-```
+- MONGO_URI: URI de conexión a Mongo (preferente Atlas, formato mongodb+srv://…/message_counter?…)
+- PORT: puerto HTTP (default 3000)
 
-## Run tests
+Importante: nunca publiques tu MONGO_URI (con usuario/contraseña) en el repositorio. Usa variables de entorno locales y secretos en tu plataforma (Railway/GitHub).
 
-```bash
-# unit tests
-$ pnpm run test
+Ejecución local (usando Atlas)
 
-# e2e tests
-$ pnpm run test:e2e
+1. Crea un usuario de DB y habilita tu IP en Atlas (o 0.0.0.0/0 temporal para demo).
+2. Asegúrate de codificar la contraseña si tiene caracteres especiales:
+   - @ → %40, ! → %21, # → %23, & → %26, + → %2B, / → %2F, : → %3A, ? → %3F
+3. Arranca:
+   - macOS/Linux (zsh/bash):
+     MONGO_URI='mongodb+srv://USUARIO:PASSWORD_URLENCODED@cluster.mongodb.net/message_counter?retryWrites=true&w=majority' pnpm start:dev
+   - Si el puerto 3000 está ocupado:
+     PORT=3001 MONGO_URI='...' pnpm start:dev
+4. En los logs deberías ver:
+   Connecting to MongoDB at mongodb+srv://…
 
-# test coverage
-$ pnpm run test:cov
-```
+Swagger / OpenAPI
 
-## Deployment
+- UI: http://localhost:3000/docs
+- JSON: http://localhost:3000/docs-json
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+Endpoints
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+- POST /webhook
+  - Body:
+    {
+    "message_id": "msg_01HX9FZ2E0KJ8C3Q9XP",
+    "account_id": "acc_11111111-1111-4111-8111-111111111111",
+    "created_at": "2025-09-18T10:00:00Z",
+    "metadata": { "source": "whatsapp", "channel": "inbound" }
+    }
+  - Respuesta: 202 Accepted (procesamiento asíncrono).
+- GET /counts?account_id=...&from=...&to=...
+  - Ejemplo:
+    /counts?account_id=acc_1111...&from=2025-09-18T10:00:00Z&to=2025-09-18T12:00:00Z
+  - Respuesta:
+    [
+    { "account_id": "acc_...", "datetime": "2025-09-18T10:00:00.000Z", "count_messages": 1 },
+    ...
+    ]
 
-```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
-```
+cURL de prueba
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+- POST /webhook:
+  ts=$(date -u +%s)
+  curl -X POST http://localhost:3000/webhook \
+   -H "Content-Type: application/json" \
+   -d '{"message_id":"msg_demo_01","account_id":"acc_11111111-1111-4111-8111-111111111111","created_at":"2025-09-18T10:15:00Z","metadata":{"source":"whatsapp","channel":"inbound"}}'
+- GET /counts:
+  curl "http://localhost:3000/counts?account_id=acc_11111111-1111-4111-8111-111111111111&from=2025-09-18T10:00:00Z&to=2025-09-18T12:00:00Z"
 
-## Resources
+Docker (local)
 
-Check out a few resources that may come in handy when working with NestJS:
+- Build:
+  docker build -t message-counter:latest .
+- Run (usando Atlas):
+  docker run --rm -p 3000:3000 \
+   -e PORT=3000 \
+   -e MONGO_URI="mongodb+srv://USUARIO:PASSWORD_URLENCODED@cluster.mongodb.net/message_counter?retryWrites=true&w=majority" \
+   message-counter:latest
+- Abre http://localhost:3000/docs
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+Despliegue en Railway con CI/CD (GitHub)
+Tenemos dos caminos compatibles: conectar el repo a Railway (auto-deploy) y/o usar el workflow de GitHub Actions que ya incluye la CLI de Railway.
 
-## Support
+A) Auto-deploy conectando GitHub en Railway (más sencillo)
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+1. En Railway, crea un proyecto.
+2. Conecta tu repositorio de GitHub.
+3. Selecciona que use Dockerfile (auto-detectado por Railway). Si te pide config, el archivo [railway.json](railway.json) indica builder DOCKERFILE.
+4. En Railway > Variables, define:
+   - MONGO_URI (obligatorio) → tu URI de Atlas
+   - PORT (opcional) → 3000 (Railway asigna un puerto, pero solemos exponer 3000 dentro del contenedor)
+5. Ajusta IPs en Atlas:
+   - Para demos públicas, puedes permitir 0.0.0.0/0 temporalmente (no recomendado en prod).
+   - Ideal: permitir solo egress del PaaS (Railway); consulta su documentación de IPs salientes.
+6. Dale “Deploy”. Railway construirá la imagen con [Dockerfile](Dockerfile) y levantará el servicio.
+7. Prueba la URL pública de Railway:
+   - https://TU-SUBDOMINIO.up.railway.app/docs
 
-## Stay in touch
+B) GitHub Actions + Railway CLI (ya incluido)
+Este repositorio trae un workflow en [.github/workflows/deploy.yml](.github/workflows/deploy.yml) que:
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+- Instala dependencias, compila y usa la CLI de Railway para desplegar.
+- Para usarlo, agrega los siguientes secretos en GitHub (Settings > Secrets and variables > Actions):
+  - RAILWAY_TOKEN (obligatorio) → desde Railway (Account Settings > API Tokens).
+  - RAILWAY_PROJECT_ID (recomendado) → railway project list.
+  - RAILWAY_ENVIRONMENT_ID (opcional) → railway environment list.
+  - RAILWAY_SERVICE_NAME (recomendado) → nombre del servicio en Railway.
+- En Railway, define las variables de entorno de la app:
+  - MONGO_URI (obligatorio)
+  - PORT (opcional)
+- Cada push a la rama main dispara el deploy:
+  - on: push: branches: [ main ]
 
-## License
+Notas de seguridad
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+- MONGO_URI debe vivir como secreto en Railway; no lo subas al repo.
+- Si vas a compartir públicamente el servicio, considera:
+  - Rate limiting básico y validaciones (futuro plus: firma HMAC del webhook).
+  - Rotación de credenciales de Atlas y evitar 0.0.0.0/0 en producción.
+
+Troubleshooting Atlas
+
+- IP no permitida:
+  - Agrega tu IP pública en Atlas → Network Access, espera 1–3 min y reintenta.
+- bad auth:
+  - Verifica usuario/contraseña y URL-encoding.
+  - Prueba con:
+    mongosh "mongodb+srv://user:pass@cluster.mongodb.net/message_counter?retryWrites=true&w=majority" --eval 'db.runCommand({ ping: 1 })'
+- DNS SRV:
+  - Asegúrate de usar mongodb+srv (driver maneja TLS/dns automáticamente).
+
+Roadmap (plus)
+
+- Verificación de firma en /webhook (HMAC timestamped, anti-replay).
+- Docker Compose de entorno local con variables preconfiguradas.
+- Observabilidad (p. ej., logs estructurados, metrics endpoint).
+- Tests E2E CI.
+
+Licencia
+
+- UNLICENSED (ver package.json).
