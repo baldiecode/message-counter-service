@@ -1,0 +1,72 @@
+name: CI - Build & Deploy to Railway
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8.15.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Install Railway CLI
+        run: npm i -g @railway/cli
+
+      # Requiere definir secretos del repo:
+      # - RAILWAY_TOKEN            (obligatorio)  -> desde Railway: Account Settings > API Tokens
+      # - RAILWAY_PROJECT_ID       (recomendado)  -> railway project list
+      # - RAILWAY_ENVIRONMENT_ID   (opcional)     -> railway environment list
+      # - RAILWAY_SERVICE_NAME     (recomendado)  -> nombre del servicio a desplegar (coincidir con el creado en Railway)
+      #
+      # Variables de entorno app (no se ponen aquí): en Railway > Variables
+      # - MONGO_URI (obligatorio en producción)
+      # - PORT (opcional, por defecto 3000)
+      - name: Deploy to Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+          RAILWAY_ENVIRONMENT_ID: ${{ secrets.RAILWAY_ENVIRONMENT_ID }}
+          RAILWAY_SERVICE_NAME: ${{ secrets.RAILWAY_SERVICE_NAME }}
+        run: |
+          set -euo pipefail
+          # Login
+          railway login --token "$RAILWAY_TOKEN"
+
+          # Seleccionar proyecto si está definido
+          if [ -n "${RAILWAY_PROJECT_ID:-}" ]; then
+            railway link --project "$RAILWAY_PROJECT_ID"
+          fi
+
+          # Seleccionar entorno si está definido
+          if [ -n "${RAILWAY_ENVIRONMENT_ID:-}" ]; then
+            railway environment --environment "$RAILWAY_ENVIRONMENT_ID"
+          fi
+
+          # Desplegar usando Dockerfile del repo
+          if [ -n "${RAILWAY_SERVICE_NAME:-}" ]; then
+            railway up --service "$RAILWAY_SERVICE_NAME" --ci --detach
+          else
+            railway up --ci --detach
+          fi
