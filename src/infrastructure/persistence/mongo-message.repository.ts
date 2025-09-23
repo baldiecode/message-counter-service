@@ -30,16 +30,17 @@ export class MongoMessageRepository implements MessageRepository {
         metadata: message.getMetadata(),
       });
       this.logger.log(`Message saved: ${message.getId().toString()}`);
-    } catch (error) {
-      if (error.code === 11000) {
+    } catch (error: any) {
+      if (error && error.code === 11000) {
+        // Duplicate key (idempotency): treat as success (message already persisted)
         this.logger.warn(
-          `Duplicate message attempted: ${message.getId().toString()}`,
+          `Duplicate message attempted (idempotent): ${message.getId().toString()}`,
         );
-      } else {
-        this.logger.error(
-          `Error saving message ${message.getId().toString()}: ${error.message}`,
-        );
+        return;
       }
+      this.logger.error(
+        `Error saving message ${message.getId().toString()}: ${error?.message ?? error}`,
+      );
       throw error;
     }
   }

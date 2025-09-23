@@ -9,5 +9,4 @@ export const MessageSchema = new Schema(
   },
   { _id: false, versionKey: false, collection: 'messages' },
 );
-MessageSchema.index({ _id: 1 }, { unique: true });
 MessageSchema.index({ accountId: 1, createdAt: 1 });
