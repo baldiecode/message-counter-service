@@ -7,6 +7,7 @@ import {
   ValidatorConstraintInterface,
 } from 'class-validator';
 import { registerDecorator } from 'class-validator';
+import { ApiProperty, ApiHideProperty } from '@nestjs/swagger';
 
 @ValidatorConstraint({ name: 'DateRange', async: false })
 export class DateRangeConstraint implements ValidatorConstraintInterface {
@@ -42,15 +43,31 @@ export class DateRangeConstraint implements ValidatorConstraintInterface {
 }
 
 export class GetCountsQueryDto {
+  @ApiProperty({
+    description: 'Account identifier (UUID-like string prefixed with acc_)',
+    example: 'acc_11111111-1111-4111-8111-111111111111',
+  })
   @IsString()
   account_id!: string;
 
+  @ApiProperty({
+    description: 'Start of the time range (ISO 8601)',
+    example: '2025-09-18T10:00:00Z',
+    format: 'date-time',
+  })
   @IsISO8601()
   from!: string;
 
+  @ApiProperty({
+    description: 'End of the time range (ISO 8601)',
+    example: '2025-09-18T12:00:00Z',
+    format: 'date-time',
+  })
   @IsISO8601()
   to!: string;
 
+  // Hidden from Swagger; used only to trigger custom DateRange validation
+  @ApiHideProperty()
   @Validate(DateRangeConstraint)
   range!: string; // Dummy field for validation
 }
